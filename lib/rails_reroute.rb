@@ -7,29 +7,29 @@ module RailsReroute
         def reroute new_route
           reroute_new_env new_route
           unlock_request
-          Rails.application.call(env)
-          @_response = env["action_controller.instance"].response
+          Rails.application.call(request.env)
+          @_response = request.env["action_controller.instance"].response
           @_response_body = @_response.body
         end
 
         def reroute_new_env new_route
           new_paths = {
             "PATH_INFO" => "#{new_route}",
-            "REQUEST_URI"=>"#{env["rack.url_scheme"]}://#{env["HTTP_HOST"]}#{new_route}",
+            "REQUEST_URI"=>"#{request.env["rack.url_scheme"]}://#{request.env["HTTP_HOST"]}#{new_route}",
             "REQUEST_PATH"=>"#{new_route}", 
-            "ORIGINAL_REQUEST_URI" => env["REQUEST_URI"]
+            "ORIGINAL_REQUEST_URI" => request.env["REQUEST_URI"]
           }
 
-          env.select! do |key, value|
+          request.env.select! do |key, value|
             DEFAULT_VARIABLES.include?(key) || key.include?("rack")
           end
 
-          env.merge! new_paths
+          request.env.merge! new_paths
         end
 
         def unlock_request
           unless Rails.application.config.allow_concurrency
-            Rack::Lock.new(Rails.application).call(env) rescue ThreadError
+            Rack::Lock.new(Rails.application).call(request.env) rescue ThreadError
           end
         end
       end
